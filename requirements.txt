@@ -8,3 +8,4 @@ pymysql
 Werkzeug
 Pillow
 gunicorn
+email-validator
