@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block content %}
+<link
+  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+  rel="stylesheet"
+/>
+
+<style>
+  body {
+    background: linear-gradient(to bottom right, #f8fafc, #e0f2fe);
+    font-family: "Inter", sans-serif;
+  }
+
+  h1, h2, h3 {
+    font-family: "Playfair Display", serif;
+  }
+
+  .hero-section {
+    text-align: center;
+    margin-top: 60px;
+  }
+
+  .hero-section h2 {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .highlight {
+    background: linear-gradient(to right, #2563eb, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .role-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+  }
+
+  .role-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  .role-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+  }
+
+  .btn-gradient {
+    background: linear-gradient(to right, #2563eb, #06b6d4);
+    border: none;
+    color: white;
+    transition: background 0.3s ease;
+  }
+
+  .btn-gradient:hover {
+    background: linear-gradient(to right, #1d4ed8, #0891b2);
+  }
+</style>
+
+<div class="container py-5">
+  <!-- Header -->
+  <div class="d-flex justify-content-center align-items-center mb-4">
+    <div
+      class="d-flex align-items-center justify-content-center bg-gradient p-2 rounded-3"
+      style="background: linear-gradient(to right, #2563eb, #06b6d4)"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="white" class="bi bi-shield-check me-2" viewBox="0 0 16 16">
+        <path d="M5.338 1.54a.5.5 0 0 1 .324-.467l2.5-.833a.5.5 0 0 1 .316 0l2.5.833a.5.5 0 0 1 .324.467c.082 1.523.553 6.52 4.208 9.294a.5.5 0 0 1 .202.395V12a.5.5 0 0 1-.126.326c-1.132 1.276-3.108 2.9-6.125 3.633a.5.5 0 0 1-.233 0C4.789 15.226 2.813 13.602 1.682 12.326A.5.5 0 0 1 1.556 12v-.77a.5.5 0 0 1 .202-.395c3.655-2.774 4.126-7.771 4.208-9.294ZM6.75 8.75 8 10l3.5-3.5-.707-.707L8 8.586 7.457 8.043l-.707.707Z"/>
+      </svg>
+      <h3 class="fw-bold text-slate-800 mb-0 text-dark">CommunityFix</h3>
+    </div>
+  </div>
+
+  <!-- Hero Text -->
+  <div class="hero-section mb-5">
+    <h2>
+      Your Voice, <span class="highlight">Your Community</span>
+    </h2>
+    <p class="lead text-secondary mt-3">
+      Submit complaints, track progress, and make your community a better place to live
+    </p>
+  </div>
+
+  <!-- Role Cards -->
+  <div class="row justify-content-center g-4">
+    <!-- Citizen -->
+    <div class="col-md-4">
+      <div class="card role-card shadow-lg p-4 text-center">
+        <div class="role-icon bg-primary bg-opacity-10">
+          <i class="bi bi-person text-primary fs-3"></i>
+        </div>
+        <h4 class="fw-semibold mt-3">Citizen</h4>
+        <p class="text-muted">Submit and track your community complaints</p>
+        <a href="{{ url_for('auth.login_citizen') }}" class="btn btn-gradient w-100 py-2">
+          Continue as Citizen
+        </a>
+      </div>
+    </div>
+
+    <!-- Admin -->
+    <div class="col-md-4">
+      <div class="card role-card shadow-lg p-4 text-center">
+        <div class="role-icon bg-success bg-opacity-10">
+          <i class="bi bi-shield-check text-success fs-3"></i>
+        </div>
+        <h4 class="fw-semibold mt-3">Admin</h4>
+        <p class="text-muted">Manage complaints for your department</p>
+        <a href="{{ url_for('auth.login_admin') }}" class="btn btn-gradient w-100 py-2">
+          Continue as Admin
+        </a>
+      </div>
+    </div>
+
+    <!-- Super Admin -->
+    <div class="col-md-4">
+      <div class="card role-card shadow-lg p-4 text-center">
+        <div class="role-icon bg-warning bg-opacity-10">
+          <i class="bi bi-crown text-warning fs-3"></i>
+        </div>
+        <h4 class="fw-semibold mt-3">Super Admin</h4>
+        <p class="text-muted">Oversee all departments and complaints</p>
+        <a href="{{ url_for('auth.login_superadmin') }}" class="btn btn-gradient w-100 py-2">
+          Continue as Super Admin
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap Icons -->
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+/>
+
+{% endblock %}

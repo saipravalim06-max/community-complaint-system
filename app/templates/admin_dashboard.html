@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+
+<style>
+  body {
+    background: linear-gradient(to bottom right, #f1f5f9, #e0f2f1);
+    font-family: "Inter", sans-serif;
+  }
+  .dashboard-header {
+    background: #ffffff;
+    border-bottom: 1px solid #d1d5db;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+  .dashboard-header h1 {
+    font-family: "Playfair Display", serif;
+    font-weight: 700;
+  }
+  .summary-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 1.5rem;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  .summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  }
+  .active-filter { border: 2px solid #0f766e !important; }
+  .complaint-card {
+    background: #fff;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+  }
+  .complaint-card:hover { transform: translateY(-2px); }
+  .status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 500;
+  white-space: nowrap; /* ✅ Prevents the emoji/text from splitting */
+  flex-shrink: 0;      /* ✅ Keeps it from squishing on smaller widths */
+}
+  .status-pending { background: #fff7ed; color: #b45309; }
+  .status-inprogress { background: #ecfeff; color: #0e7490; }
+  .status-resolved { background: #dcfce7; color: #166534; }
+  .btn-gradient {
+    background: linear-gradient(to right, #10b981, #059669);
+    color: white;
+    border: none;
+  }
+  .btn-gradient:hover {
+    background: linear-gradient(to right, #059669, #047857);
+  }
+    .filter-btn {
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .filter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  }
+  .active-filter {
+    border: 2px solid #2563eb !important;
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);}
+</style>
+
+<header class="dashboard-header d-flex justify-content-between align-items-center">
+  <div>
+    <h1 class="h4 mb-1">Admin Dashboard</h1>
+    <p class="text-muted mb-0">Welcome, {{ current_user.username }} ({{ current_user.department.name }})</p>
+  </div>
+  <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-secondary">
+    <i class="bi bi-box-arrow-right me-1"></i> Logout
+  </a>
+</header>
+
+<main class="container py-5">
+  <div class="row g-4 mb-4 text-center">
+    <div class="col-md-3"><div class="summary-card filter-btn" data-filter="all"><i class="bi bi-list text-primary"></i><h6>All</h6><h4>{{ total_complaints }}</h4></div></div>
+    <div class="col-md-3"><div class="summary-card filter-btn" data-filter="pending"><i class="bi bi-clock text-warning"></i><h6>Pending</h6><h4 class="text-warning">{{ pending_count }}</h4></div></div>
+    <div class="col-md-3"><div class="summary-card filter-btn" data-filter="in_progress"><i class="bi bi-hourglass-split text-info"></i><h6>In Progress</h6><h4 class="text-info">{{ in_progress_count }}</h4></div></div>
+    <div class="col-md-3"><div class="summary-card filter-btn" data-filter="resolved"><i class="bi bi-check-circle text-success"></i><h6>Resolved</h6><h4 class="text-success">{{ resolved_count }}</h4></div></div>
+  </div>
+
+  <div class="row g-4">
+    {% for complaint in complaints %}
+    <div class="col-md-6 col-lg-4">
+      <div
+        class="card complaint-card p-3"
+        data-id="{{ complaint.id }}"
+        data-title="{{ complaint.title }}"
+        data-description="{{ complaint.description }}"
+        data-address="{{ complaint.address }}"
+        data-latitude="{{ complaint.latitude or '' }}"
+        data-longitude="{{ complaint.longitude or '' }}"
+        data-status="{{ complaint.status }}"
+        data-date="{{ complaint.created_at.strftime('%d/%m/%Y, %I:%M %p') }}"
+        data-departments="{% for dept in complaint.departments %}{{ dept.name }}{% if not loop.last %}, {% endif %}{% endfor %}"
+        data-images="{{ complaint.image_filenames or '' }}"
+      >
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h5 class="fw-semibold">{{ complaint.title }}</h5>
+          <span class="status-badge {% if complaint.status == 'pending' %}status-pending{% elif complaint.status == 'in_progress' %}status-inprogress{% else %}status-resolved{% endif %}">
+            {% if complaint.status == 'pending' %}🕒 Pending{% elif complaint.status == 'in_progress' %}🔄 In Progress{% else %}✅ Resolved{% endif %}
+          </span>
+        </div>
+        <p class="text-muted small mb-2">{{ complaint.description[:100] }}...</p>
+        <p class="text-secondary small"><i class="bi bi-calendar me-1"></i>{{ complaint.created_at.strftime('%d/%m/%Y') }}</p>
+        {% if complaint.status != 'resolved' %}
+          <button class="btn btn-sm btn-gradient mt-2 w-100 update-status-btn" data-id="{{ complaint.id }}">Update Status</button>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+      <p class="text-center text-muted mt-5">No complaints available for this department.</p>
+    {% endfor %}
+  </div>
+</main>
+
+<!-- Complaint Detail Modal -->
+<div class="modal fade" id="complaintDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="complaintTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Description:</strong> <span id="complaintDescription"></span></p>
+        <p><strong>Address:</strong> <span id="complaintAddress"></span></p>
+        <p><strong>Address:</strong> <span id="complaintAddress"></span></p>
+        
+        <div class="mt-3">
+          <button id="viewOnMapBtn" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-geo-alt me-1"></i> View on Map
+          </button>
+        </div>
+        <p><strong>Departments:</strong> <span id="complaintDepartments"></span></p>
+        <div id="complaintImagesSection" class="mt-3">
+          <h6><strong>Complaint Images:</strong></h6>
+          <div id="complaintImages" class="d-flex flex-wrap gap-2"></div>
+        </div>
+        <p class="text-muted mt-3" id="complaintDate"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="updateStatusBtn" class="btn btn-gradient">
+          <i class="bi bi-pencil-square me-1"></i> Update Status
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Update Complaint Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="updateStatusForm" method="POST" enctype="multipart/form-data">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Resolution Note (Optional)</label>
+            <textarea name="resolution_note" class="form-control" rows="3" placeholder="Describe actions taken"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Upload Resolution Images (Optional)</label>
+            <input type="file" name="resolved_image" class="form-control" accept="image/*" multiple>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+          <button type="submit" name="action" value="in_progress" class="btn btn-warning text-white w-50 me-2">
+            <i class="bi bi-hourglass-split me-1"></i> Mark as In Progress
+          </button>
+          <button type="submit" name="action" value="resolved" class="btn btn-success w-50">
+            <i class="bi bi-check-circle me-1"></i> Mark as Resolved
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- ✅ Load Bootstrap Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("✅ Admin dashboard script loaded");
+
+  // --- Complaint Modal Logic ---
+  document.querySelectorAll(".complaint-card").forEach(card => {
+    card.addEventListener("click", function (e) {
+      // Prevent modal opening if clicking on update status button
+      if (e.target.closest(".update-status-btn")) return;
+
+      const modal = new bootstrap.Modal(document.getElementById("complaintDetailModal"));
+      
+      // Populate modal fields
+      document.getElementById("complaintTitle").textContent = this.dataset.title || "";
+      document.getElementById("complaintDescription").textContent = this.dataset.description || "";
+      document.getElementById("complaintAddress").textContent = this.dataset.address || "";
+      document.getElementById("complaintDepartments").textContent = this.dataset.departments || "";
+      document.getElementById("complaintDate").textContent = "Submitted: " + (this.dataset.date || "");
+
+      // --- Complaint images ---
+      const imagesDiv = document.getElementById("complaintImages");
+      imagesDiv.innerHTML = "";
+      if (this.dataset.images && this.dataset.images.trim() !== "") {
+        const imgs = this.dataset.images.split(",");
+        imgs.forEach(img => {
+          const imgEl = document.createElement("img");
+          imgEl.src = `/static/uploads/${img.trim()}`;
+          imgEl.classList.add("img-fluid", "rounded", "shadow-sm", "me-2");
+          imgEl.style.maxHeight = "120px";
+          imagesDiv.appendChild(imgEl);
+        });
+      } else {
+        imagesDiv.innerHTML = "<p class='text-muted small'>No images available.</p>";
+      }
+
+      // --- View on Map Button ---
+      const lat = this.dataset.latitude;
+      const lng = this.dataset.longitude;
+      const mapBtn = document.getElementById("viewOnMapBtn");
+
+      if (lat && lng && lat !== "None" && lng !== "None") {
+        mapBtn.style.display = "inline-block";
+        mapBtn.onclick = function () {
+          window.open(`https://www.google.com/maps?q=${lat},${lng}`, "_blank");
+        };
+      } else {
+        mapBtn.style.display = "none";
+      }
+
+      // --- Update Status Modal Button ---
+      const updateBtn = document.getElementById("updateStatusBtn");
+      updateBtn.dataset.id = this.dataset.id;
+
+      modal.show();
+    });
+  });
+
+  // --- Open Update Modal ---
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest(".update-status-btn");
+    if (!btn) return;
+    e.stopPropagation();
+    const id = btn.dataset.id;
+    const form = document.getElementById("updateStatusForm");
+    form.action = `/admin/complaint/${id}`;
+    const modal = new bootstrap.Modal(document.getElementById("updateStatusModal"));
+    modal.show();
+  });
+
+  // --- Filter Buttons ---
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const filter = this.dataset.filter;
+      const cards = document.querySelectorAll(".complaint-card");
+      let visibleCount = 0;
+
+      cards.forEach(card => {
+        const show = filter === "all" || card.dataset.status === filter;
+        if (card.parentElement) {
+          card.parentElement.style.display = show ? "block" : "none";
+          if (show) visibleCount++;
+        }
+      });
+
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active-filter"));
+      this.classList.add("active-filter");
+
+      const existingMsg = document.getElementById("noResultsMessage");
+      if (visibleCount === 0) {
+        if (!existingMsg) {
+          const msg = document.createElement("div");
+          msg.id = "noResultsMessage";
+          msg.className = "text-center text-muted mt-4";
+          msg.innerHTML = "<p>No complaints found.</p>";
+          const complaintsRow = document.querySelector(".row.g-4");
+          if (complaintsRow) complaintsRow.after(msg);
+        }
+      } else if (existingMsg) existingMsg.remove();
+    });
+  });
+});
+</script>
+
+<!-- ✅ Google Maps Script -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ config.GOOGLE_MAPS_API_KEY }}&libraries=places"></script>
+{% endblock %}

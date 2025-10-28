@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+{% block content %}
+<link
+  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+  rel="stylesheet"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+/>
+
+<style>
+  body {
+    background: linear-gradient(to bottom right, #f8fafc, #fff7ed);
+    font-family: "Inter", sans-serif;
+  }
+
+  .dashboard-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  }
+
+  .dashboard-header h1 {
+    font-family: "Playfair Display", serif;
+    font-weight: 700;
+  }
+
+  .summary-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .summary-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .active-filter {
+    border: 2px solid #0f766e;
+  }
+
+  .complaint-card {
+    background: #fff;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .complaint-card:hover {
+    transform: translateY(-3px);
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .status-pending {
+    background: #fff7ed;
+    color: #b45309;
+  }
+
+  .status-inprogress {
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+
+  .status-resolved {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .btn-gradient {
+    background: linear-gradient(to right, #f59e0b, #10b981);
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+  }
+
+  .btn-gradient:hover {
+    background: linear-gradient(to right, #fbbf24, #059669);
+  }
+
+  .dept-card {
+    background: #fef3c7;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+</style>
+
+<header class="dashboard-header d-flex justify-content-between align-items-center">
+  <div>
+    <h1 class="h4 mb-1">Super Admin Dashboard</h1>
+    <p class="text-muted mb-0">
+      Welcome, {{ current_user.username }} — overseeing all departments
+    </p>
+  </div>
+  <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-secondary">
+    <i class="bi bi-box-arrow-right me-1"></i> Logout
+  </a>
+</header>
+
+<main class="container py-5">
+  <!-- Top Summary Stats -->
+  <div class="row g-4 mb-5 text-center">
+    <div class="col-md-3">
+      <div class="summary-card filter-btn" data-filter="all">
+        <h6>Total Complaints</h6>
+        <h3 class="fw-bold text-dark">{{ total }}</h3>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="summary-card filter-btn" data-filter="pending">
+        <h6 class="text-warning">Pending</h6>
+        <h3 class="fw-bold text-warning">{{ pending }}</h3>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="summary-card filter-btn" data-filter="in_progress">
+        <h6 class="text-info">In Progress</h6>
+        <h3 class="fw-bold text-info">{{ in_progress }}</h3>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="summary-card filter-btn" data-filter="resolved">
+        <h6 class="text-success">Resolved</h6>
+        <h3 class="fw-bold text-success">{{ resolved }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Department Breakdown -->
+  <div class="card mb-5 border-0 shadow-sm rounded-4">
+    <div class="card-body">
+      <h5 class="fw-bold mb-4 text-teal-700">Complaints by Department</h5>
+      <div class="row g-3">
+        {% for dept in department_data %}
+        <div class="col-md-3">
+          <div class="dept-card">
+            <h6 class="fw-semibold text-teal-700 mb-1">{{ dept.name }}</h6>
+            <p class="text-muted small mb-1">Total: {{ dept.total }}</p>
+            <p class="text-warning small mb-1">Pending: {{ dept.pending }}</p>
+            <p class="text-info small mb-1">In Progress: {{ dept.in_progress }}</p>
+            <p class="text-success small mb-0">Resolved: {{ dept.resolved }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold">Complaints</h5>
+    <div class="d-flex gap-2">
+      <select id="departmentFilter" class="form-select form-select-sm">
+        <option value="all">All Departments</option>
+        {% for dept in department_data %}
+        <option value="{{ dept.name }}">{{ dept.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <!-- Complaint Cards -->
+  <div class="row g-4">
+    {% for complaint in complaints %}
+    <div class="col-md-6 col-lg-4">
+      <div
+        class="complaint-card p-3"
+        data-title="{{ complaint.title }}"
+        data-description="{{ complaint.description }}"
+        data-address="{{ complaint.address }}"
+        data-latitude="{{ complaint.latitude or '' }}"
+        data-longitude="{{ complaint.longitude or '' }}"
+        data-status="{{ complaint.status }}"
+        data-date="{{ complaint.created_at.strftime('%d/%m/%Y, %I:%M %p') }}"
+        data-departments="{% for dept in complaint.departments %}{{ dept.name }}{% if not loop.last %},{% endif %}{% endfor %}"
+        data-images="{{ complaint.image_filenames or '' }}"
+        data-resolution-note="{{ complaint.resolution_note or '' }}"
+        data-resolution-images="{{ complaint.resolved_images or '' }}"
+      >
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <h5 class="fw-semibold">{{ complaint.title }}</h5>
+          <span
+            class="status-badge {% if complaint.status == 'pending' %}status-pending{% elif complaint.status == 'in_progress' %}status-inprogress{% else %}status-resolved{% endif %}"
+          >
+            {% if complaint.status == 'pending' %}🕒 Pending{% elif complaint.status == 'in_progress' %}🔄 In Progress{% else %}✅ Resolved{% endif %}
+          </span>
+        </div>
+        <p class="text-muted small mb-2">{{ complaint.description[:90] }}...</p>
+        <p class="text-secondary small">
+          <i class="bi bi-calendar me-1"></i>{{ complaint.created_at.strftime('%d/%m/%Y') }}
+        </p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</main>
+
+<!-- Complaint Detail Modal -->
+<div class="modal fade" id="complaintDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="complaintTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Departments:</strong> <span id="complaintDepartments"></span></p>
+        <p><strong>Description:</strong> <span id="complaintDescription"></span></p>
+        <p><strong>Address:</strong> <span id="complaintAddress"></span></p>
+        <div class="mt-3">
+          <button id="viewOnMapBtn" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-geo-alt me-1"></i> View on Map
+          </button>
+        </div>
+        <div id="complaintImagesSection" class="mt-3">
+          <h6><strong>Complaint Images:</strong></h6>
+          <div id="complaintImages" class="d-flex flex-wrap gap-2"></div>
+        </div>
+
+        <div id="resolutionSection" class="mt-3">
+          <h6><strong>Resolution Note:</strong></h6>
+          <p id="resolutionNote" class="text-muted"></p>
+          <h6><strong>Resolution Images:</strong></h6>
+          <div id="resolutionImages" class="d-flex flex-wrap gap-2"></div>
+        </div>
+
+        <p class="text-muted mt-3" id="complaintDate"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Load Bootstrap Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("✅ Super Admin dashboard script loaded");
+
+  const cards = document.querySelectorAll(".complaint-card");
+  const deptSelect = document.getElementById("departmentFilter");
+  const statusBtns = document.querySelectorAll(".filter-btn");
+
+  let activeStatus = "all";
+  let activeDept = "all";
+
+  // --- Complaint Modal ---
+  cards.forEach(card => {
+    card.addEventListener("click", function (e) {
+      // Ignore clicks on filter/update buttons
+      if (e.target.closest(".filter-btn")) return;
+
+      const modal = new bootstrap.Modal(document.getElementById("complaintDetailModal"));
+
+      // Populate complaint info
+      document.getElementById("complaintTitle").textContent = this.dataset.title || "";
+      document.getElementById("complaintDescription").textContent = this.dataset.description || "";
+      document.getElementById("complaintAddress").textContent = this.dataset.address || "";
+      document.getElementById("complaintDepartments").textContent = this.dataset.departments || "";
+      document.getElementById("complaintDate").textContent = "Submitted: " + (this.dataset.date || "");
+
+      // --- Complaint Images ---
+      const imagesDiv = document.getElementById("complaintImages");
+      imagesDiv.innerHTML = "";
+      const imgs = this.dataset.images ? this.dataset.images.split(",") : [];
+      if (imgs.length && imgs[0].trim() !== "") {
+        imgs.forEach(img => {
+          const el = document.createElement("img");
+          el.src = `/static/uploads/${img.trim()}`;
+          el.classList.add("img-fluid", "rounded", "shadow-sm", "border", "me-2", "mb-2");
+          el.style.maxHeight = "150px";
+          imagesDiv.appendChild(el);
+        });
+      } else {
+        imagesDiv.innerHTML = "<p class='text-muted small'>No images uploaded.</p>";
+      }
+
+      // --- Resolution Section ---
+      const resSection = document.getElementById("resolutionSection");
+      const resNote = document.getElementById("resolutionNote");
+      const resImgsDiv = document.getElementById("resolutionImages");
+      resImgsDiv.innerHTML = "";
+      resNote.textContent = "";
+
+      if (this.dataset.status === "resolved") {
+        resSection.style.display = "block";
+        resNote.textContent = this.dataset.resolutionNote || "No resolution note provided.";
+        const resImgs = this.dataset.resolutionImages ? this.dataset.resolutionImages.split(",") : [];
+        if (resImgs.length && resImgs[0].trim() !== "") {
+          resImgs.forEach(img => {
+            const el = document.createElement("img");
+            el.src = `/static/uploads/${img.trim()}`;
+            el.classList.add("img-fluid", "rounded", "shadow-sm", "border", "me-2", "mb-2");
+            el.style.maxHeight = "150px";
+            resImgsDiv.appendChild(el);
+          });
+        } else {
+          resImgsDiv.innerHTML = "<p class='text-muted small'>No resolution images.</p>";
+        }
+      } else {
+        resSection.style.display = "none";
+      }
+
+      // --- View on Map Button ---
+      const lat = this.dataset.latitude;
+      const lng = this.dataset.longitude;
+      const mapBtn = document.getElementById("viewOnMapBtn");
+
+      if (lat && lng && lat !== "None" && lng !== "None") {
+        mapBtn.style.display = "inline-block";
+        mapBtn.onclick = function () {
+          const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+          window.open(mapUrl, "_blank");
+        };
+      } else {
+        mapBtn.style.display = "none";
+      }
+
+      modal.show();
+    });
+  });
+
+  // --- Combined Filter Logic ---
+  function applyFilters() {
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const statusMatch = activeStatus === "all" || card.dataset.status === activeStatus;
+      const depts = (card.dataset.departments || "").split(",").map(d => d.trim().toLowerCase());
+      const deptMatch = activeDept === "all" || depts.includes(activeDept.toLowerCase());
+      const parentCol = card.closest(".col-md-6, .col-lg-4");
+
+      if (statusMatch && deptMatch) {
+        parentCol.style.display = "block";
+        visibleCount++;
+      } else {
+        parentCol.style.display = "none";
+      }
+    });
+
+    // Show "No Complaints Found" message
+    const existingMsg = document.getElementById("noResultsMessage");
+    if (visibleCount === 0) {
+      if (!existingMsg) {
+        const msg = document.createElement("div");
+        msg.id = "noResultsMessage";
+        msg.className = "text-center text-muted mt-4";
+        msg.innerHTML = "<p>No complaints found.</p>";
+        document.querySelector("main .row.g-4:last-of-type").after(msg);
+      }
+    } else if (existingMsg) {
+      existingMsg.remove();
+    }
+  }
+
+  // --- Status Buttons ---
+  statusBtns.forEach(btn => {
+    btn.addEventListener("click", function () {
+      activeStatus = this.dataset.filter;
+      statusBtns.forEach(b => b.classList.remove("active-filter"));
+      this.classList.add("active-filter");
+      applyFilters();
+    });
+  });
+
+  // --- Department Dropdown ---
+  if (deptSelect) {
+    deptSelect.addEventListener("change", function () {
+      activeDept = this.value;
+      applyFilters();
+    });
+  }
+
+  applyFilters();
+});
+</script>
+
+<!-- ✅ Google Maps JS -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ config.GOOGLE_MAPS_API_KEY }}&libraries=places"></script>
+{% endblock %}
