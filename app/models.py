@@ -44,7 +44,7 @@ class Complaint(db.Model):
     address = db.Column(db.String(255))
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
-    status = db.Column(db.Enum('pending', 'in_progress', 'resolved', name='complaint_status'), default='pending')
+    status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(ZoneInfo("Asia/Kolkata")))
     image_filenames = db.Column(db.Text)
     resolution_note = db.Column(db.Text, nullable=True)
