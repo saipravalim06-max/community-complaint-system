@@ -16,6 +16,10 @@ def signup_citizen():
         return redirect(url_for("citizen.dashboard"))
 
     form = CitizenSignupForm()
+    if form.is_submitted():
+        print("Form submitted ✅")
+    if not form.validate():
+        print("❌ Validation errors:", form.errors)
     if form.validate_on_submit():
         role = Role.query.filter_by(name="citizen").first()
         user = User(
