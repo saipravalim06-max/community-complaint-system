@@ -4,6 +4,7 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from config import Config
 import os
+from datetime import timedelta
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -43,9 +44,46 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
     # ✅ FIX ENDS HERE
-    from datetime import timedelta
+
     app.config['SESSION_PERMANENT'] = True
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 
+    create_default_admins(app)
+    
     return app
+
+def create_default_admins(app):
+    from app.models import db, User, Role, Department
+
+    with app.app_context():
+        admin_role = Role.query.filter_by(name="admin").first()
+        super_role = Role.query.filter_by(name="superadmin").first()
+
+        if not admin_role or not super_role:
+            print("⚠️ Roles not found, skipping admin creation.")
+            return
+
+        admins = [
+            {"username": "roads_admin", "email": "admin.roads@gmail.com", "department": "Roads"},
+            {"username": "electricity_admin", "email": "admin.electricity@gmail.com", "department": "Electricity"},
+            {"username": "sanitation_admin", "email": "admin.sanitation@gmail.com", "department": "Sanitation"},
+            {"username": "watersupply_admin", "email": "admin.watersupply@gmail.com", "department": "Water Supply"},
+        ]
+
+        for data in admins:
+            if not User.query.filter_by(email=data["email"]).first():
+                dept = Department.query.filter_by(name=data["department"]).first()
+                if dept:
+                    user = User(username=data["username"], email=data["email"], role_id=admin_role.id)
+                    user.set_password("admin123")
+                    user.departments.append(dept)
+                    db.session.add(user)
+
+        if not User.query.filter_by(email="superadmin@gmail.com").first():
+            superadmin = User(username="superadmin", email="superadmin@gmail.com", role_id=super_role.id)
+            superadmin.set_password("super123")
+            db.session.add(superadmin)
+
+        db.session.commit()
+        print("✅ Admins and SuperAdmin created (if not already existing).")
 
