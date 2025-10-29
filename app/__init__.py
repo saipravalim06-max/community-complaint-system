@@ -49,7 +49,7 @@ def create_app():
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 
     create_default_admins(app)
-    
+
     return app
 
 def create_default_admins(app):
@@ -76,7 +76,7 @@ def create_default_admins(app):
                 if dept:
                     user = User(username=data["username"], email=data["email"], role_id=admin_role.id)
                     user.set_password("admin123")
-                    user.departments.append(dept)
+                    user.department = dept
                     db.session.add(user)
 
         if not User.query.filter_by(email="superadmin@gmail.com").first():
