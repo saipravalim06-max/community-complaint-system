@@ -108,6 +108,8 @@
         data-date="{{ complaint.created_at.strftime('%d/%m/%Y, %I:%M %p') }}"
         data-departments="{% for dept in complaint.departments %}{{ dept.name }}{% if not loop.last %}, {% endif %}{% endfor %}"
         data-images="{{ complaint.image_filenames or '' }}"
+        data-resolution-note="{{ complaint.resolution_note or '' }}"
+        data-resolution-images="{{ complaint.resolved_images or '' }}"
       >
         <div class="d-flex justify-content-between align-items-start mb-2">
           <h5 class="fw-semibold">{{ complaint.title }}</h5>
@@ -231,6 +233,30 @@ document.addEventListener("DOMContentLoaded", function () {
         });
       } else {
         imagesDiv.innerHTML = "<p class='text-muted small'>No images available.</p>";
+      }
+      const resSection = document.getElementById("resolutionSection");
+      const resNote = document.getElementById("resolutionNote");
+      const resImgsDiv = document.getElementById("resolutionImages");
+      resImgsDiv.innerHTML = "";
+      resNote.textContent = "";
+
+      if (this.dataset.status === "resolved") {
+        resSection.style.display = "block";
+        resNote.textContent = this.dataset.resolutionNote || "No resolution note provided.";
+        const resImgs = this.dataset.resolutionImages ? this.dataset.resolutionImages.split(",") : [];
+        if (resImgs.length && resImgs[0].trim() !== "") {
+          resImgs.forEach(img => {
+            const el = document.createElement("img");
+            el.src = `/static/uploads/${img.trim()}`;
+            el.classList.add("img-fluid", "rounded", "shadow-sm", "border", "me-2", "mb-2");
+            el.style.maxHeight = "150px";
+            resImgsDiv.appendChild(el);
+          });
+        } else {
+          resImgsDiv.innerHTML = "<p class='text-muted small'>No resolution images.</p>";
+        }
+      } else {
+        resSection.style.display = "none";
       }
 
       // --- View on Map Button ---
