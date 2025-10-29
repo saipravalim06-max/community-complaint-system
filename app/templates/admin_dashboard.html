@@ -108,8 +108,8 @@
         data-date="{{ complaint.created_at.strftime('%d/%m/%Y, %I:%M %p') }}"
         data-departments="{% for dept in complaint.departments %}{{ dept.name }}{% if not loop.last %}, {% endif %}{% endfor %}"
         data-images="{{ complaint.image_filenames or '' }}"
-        data-resolved_images="{{ c.resolved_images or '' }}"
-        data-resolution_note="{{ c.resolution_note or '' }}"
+        data-resolved_images="{{ complaint.resolved_images or '' }}"
+        data-resolution_note="{{ complaint.resolution_note or '' }}"
       >
         <div class="d-flex justify-content-between align-items-start mb-2">
           <h5 class="fw-semibold">{{ complaint.title }}</h5>
